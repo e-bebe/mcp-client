@@ -1,7 +1,9 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use std::process::Stdio;
 use std::sync::Arc;
-use tokio::io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader, Stdin, Stdout};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::process::{Child, ChildStdin, ChildStdout, Command};
 use tokio::sync::Mutex;
 
 #[async_trait]
@@ -11,18 +13,26 @@ pub trait Transport: Send + Sync {
 }
 
 pub struct StdioTransport {
-    reader: Arc<Mutex<BufReader<Stdin>>>,
-    writer: Arc<Mutex<Stdout>>,
+    reader: Arc<Mutex<BufReader<ChildStdout>>>,
+    writer: Arc<Mutex<ChildStdin>>,
+    _child: Child, // プロセスを保持
 }
 
 impl StdioTransport {
-    pub fn new() -> Self {
-        let stdin = io::stdin();
-        let stdout = io::stdout();
-        Self {
-            reader: Arc::new(Mutex::new(BufReader::new(stdin))),
-            writer: Arc::new(Mutex::new(stdout)),
-        }
+    pub fn new(command: &str) -> Result<Self> {
+        let mut child = Command::new(command)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()?;
+
+        let stdin = child.stdin.take().unwrap();
+        let stdout = child.stdout.take().unwrap();
+
+        Ok(Self {
+            reader: Arc::new(Mutex::new(BufReader::new(stdout))),
+            writer: Arc::new(Mutex::new(stdin)),
+            _child: child,
+        })
     }
 }
 

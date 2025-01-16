@@ -19,7 +19,8 @@ async fn main() -> Result<()> {
 
     info!("Starting MCP client...");
 
-    let transport = transport::StdioTransport::new();
+    let command = "hoge";
+    let transport = transport::StdioTransport::new(command)?;
     let mut client = client::MCPClient::new(Box::new(transport));
 
     info!("Connecting to MCP server...");

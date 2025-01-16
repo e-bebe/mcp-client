@@ -214,7 +214,6 @@ dependencies = [
  "anyhow",
  "async-trait",
  "env_logger",
- "log",
  "serde",
  "serde_json",
  "tokio",

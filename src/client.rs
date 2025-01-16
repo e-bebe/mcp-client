@@ -4,6 +4,7 @@ use anyhow::Result;
 use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use std::sync::atomic::{AtomicU64, Ordering};
+use tracing::info;
 
 pub struct MCPClient {
     transport: Box<dyn Transport>,
@@ -21,7 +22,7 @@ impl MCPClient {
     }
 
     pub async fn connect(&mut self) -> Result<()> {
-        log::info!("Initializing MCP connection...");
+        info!("Initializing MCP connection...");
 
         // initialize リクエストを送信
         let init_request = Request {
@@ -40,7 +41,7 @@ impl MCPClient {
             .write_message(&serde_json::to_string(&init_request)?)
             .await?;
         let response = self.transport.read_message().await?;
-        log::debug!("Initialize response: {}", response);
+        info!("Initialize response: {}", response);
 
         // initialized 通知を送信
         let init_notification = Notification {
@@ -53,7 +54,7 @@ impl MCPClient {
             .write_message(&serde_json::to_string(&init_notification)?)
             .await?;
         self.initialized = true;
-        log::info!("MCP connection initialized");
+        info!("MCP connection initialized");
 
         Ok(())
     }

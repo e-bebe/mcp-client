@@ -8,7 +8,6 @@ use tracing::info;
 
 pub struct MCPClient {
     transport: Box<dyn Transport>,
-    initialized: bool,
     request_id: AtomicU64,
 }
 
@@ -16,46 +15,13 @@ impl MCPClient {
     pub fn new(transport: Box<dyn Transport>) -> Self {
         Self {
             transport,
-            initialized: false,
             request_id: AtomicU64::new(1),
         }
     }
 
     pub async fn connect(&mut self) -> Result<()> {
-        info!("Initializing MCP connection...");
-
-        // initialize リクエストを送信
-        let init_request = Request {
-            jsonrpc: "2.0".to_string(),
-            method: "initialize".to_string(),
-            params: Some(json!({
-                "version": "1.0",
-                "capabilities": {
-                    "tools": {}
-                }
-            })),
-            id: Some(json!(self.next_request_id())),
-        };
-
-        self.transport
-            .write_message(&serde_json::to_string(&init_request)?)
-            .await?;
-        let response = self.transport.read_message().await?;
-        info!("Initialize response: {}", response);
-
-        // initialized 通知を送信
-        let init_notification = Notification {
-            jsonrpc: "2.0".to_string(),
-            method: "initialized".to_string(),
-            params: Some(json!({})),
-        };
-
-        self.transport
-            .write_message(&serde_json::to_string(&init_notification)?)
-            .await?;
-        self.initialized = true;
-        info!("MCP connection initialized");
-
+        // 初期化をスキップ
+        info!("Connected to MCP server");
         Ok(())
     }
 
@@ -64,10 +30,6 @@ impl MCPClient {
     }
 
     async fn call_tool<T: DeserializeOwned>(&self, tool_name: &str, params: Value) -> Result<T> {
-        if !self.initialized {
-            anyhow::bail!("Client not initialized");
-        }
-
         let request = Request {
             jsonrpc: "2.0".to_string(),
             method: "callTool".to_string(),
@@ -81,6 +43,7 @@ impl MCPClient {
         self.transport
             .write_message(&serde_json::to_string(&request)?)
             .await?;
+
         let response = self.transport.read_message().await?;
         let response: Response<T> = serde_json::from_str(&response)?;
 

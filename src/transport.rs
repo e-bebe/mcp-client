@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin, ChildStdout};
 use tokio::sync::Mutex;
-use tracing::info;
+use tracing::{info, warn};
 
 #[async_trait]
 pub trait Transport: Send + Sync {
@@ -24,6 +24,7 @@ impl StdioTransport {
         let mut child = tokio::process::Command::new(server_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
             .spawn()?;
 
         let stdin = child.stdin.take().unwrap();
@@ -40,11 +41,28 @@ impl StdioTransport {
 #[async_trait]
 impl Transport for StdioTransport {
     async fn read_message(&self) -> Result<String> {
-        let mut line = String::new();
         let mut reader = self.reader.lock().await;
-        info!("Received message: {}", line);
-        reader.read_line(&mut line).await?;
-        Ok(line)
+        loop {
+            let mut line = String::new();
+            let bytes_read = reader.read_line(&mut line).await?;
+
+            if bytes_read == 0 {
+                warn!("Received empty message from server");
+                anyhow::bail!("Server connection closed");
+            }
+
+            info!("Raw message received: {}", line);
+
+            // JSONっぽい行を見つけたら返す
+            if line.trim().starts_with('{') {
+                info!("Found JSON message: {}", line);
+                return Ok(line);
+            }
+
+            // ログメッセージなのでスキップ
+            info!("Skipping non-JSON line: {}", line);
+            continue;
+        }
     }
 
     async fn write_message(&self, message: &str) -> Result<()> {

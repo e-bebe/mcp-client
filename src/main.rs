@@ -7,18 +7,21 @@ mod transport;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::init();
+    info!("Starting MCP client...");
 
     let transport = transport::StdioTransport::new();
     let mut client = client::MCPClient::new(Box::new(transport));
 
+    info!("Connecting to MCP server...");
     client.connect().await?;
+
+    info!("Searching repositories...");
 
     // GitHub リポジトリを検索
     let result = client
         .search_repositories("language:rust stars:>1000")
         .await?;
-    println!("Search results: {:?}", result);
+    info!("Search results: {:?}", result);
 
     Ok(())
 }

@@ -3,8 +3,9 @@ use async_trait::async_trait;
 use std::process::Stdio;
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::{Child, ChildStdin, ChildStdout, Command};
+use tokio::process::{Child, ChildStdin, ChildStdout};
 use tokio::sync::Mutex;
+use tracing::info;
 
 #[async_trait]
 pub trait Transport: Send + Sync {
@@ -41,12 +42,14 @@ impl Transport for StdioTransport {
     async fn read_message(&self) -> Result<String> {
         let mut line = String::new();
         let mut reader = self.reader.lock().await;
+        info!("Received message: {}", line);
         reader.read_line(&mut line).await?;
         Ok(line)
     }
 
     async fn write_message(&self, message: &str) -> Result<()> {
         let mut writer = self.writer.lock().await;
+        info!("Sending message: {}", message);
         writer.write_all(message.as_bytes()).await?;
         writer.write_all(b"\n").await?;
         writer.flush().await?;

@@ -24,9 +24,9 @@ async fn main() -> Result<()> {
     info!("Connecting to MCP server...");
     client.connect().await?;
 
-    // 標準入力から1行読み込む
     let mut input = String::new();
     std::io::stdin().read_line(&mut input)?;
+    info!("Received input: {}", input);
 
     // 読み込んだJSONをパースして実行
     if let Ok(value) = serde_json::from_str::<serde_json::Value>(&input) {

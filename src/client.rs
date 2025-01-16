@@ -1,4 +1,4 @@
-use crate::protocol::{Notification, Request, Response};
+use crate::protocol::{Request, Response};
 use crate::transport::Transport;
 use anyhow::Result;
 use serde::de::DeserializeOwned;

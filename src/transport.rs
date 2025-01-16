@@ -15,12 +15,12 @@ pub trait Transport: Send + Sync {
 pub struct StdioTransport {
     reader: Arc<Mutex<BufReader<ChildStdout>>>,
     writer: Arc<Mutex<ChildStdin>>,
-    _child: Child, // プロセスを保持
+    _child: Child,
 }
 
 impl StdioTransport {
-    pub fn new(command: &str) -> Result<Self> {
-        let mut child = Command::new(command)
+    pub fn new(server_path: &str) -> Result<Self> {
+        let mut child = tokio::process::Command::new(server_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()?;

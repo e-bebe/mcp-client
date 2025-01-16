@@ -8,12 +8,12 @@ mod transport;
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
-        .with_ansi(true) // ANSIカラーを有効化
-        .with_target(true) // モジュールパスを表示
-        .with_thread_ids(true) // スレッドIDを表示
-        .with_line_number(true) // 行番号を表示
-        .with_file(false) // ファイル名を表示
-        .with_level(true) // ログレベルを表示
+        .with_ansi(true)
+        .with_target(true)
+        .with_thread_ids(true)
+        .with_line_number(true)
+        .with_file(false)
+        .with_level(true)
         .try_init()
         .expect("Failed to initialize logger");
 
@@ -28,7 +28,6 @@ async fn main() -> Result<()> {
 
     info!("Searching repositories...");
 
-    // GitHub リポジトリを検索
     let result = client
         .search_repositories("language:rust stars:>1000")
         .await?;

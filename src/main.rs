@@ -1,4 +1,5 @@
 use anyhow::Result;
+use tracing::info;
 
 mod client;
 mod protocol;
@@ -11,7 +12,6 @@ async fn main() -> Result<()> {
     let transport = transport::StdioTransport::new();
     let mut client = client::MCPClient::new(Box::new(transport));
 
-    // サーバーに接続（初期化シーケンス）
     client.connect().await?;
 
     // GitHub リポジトリを検索
